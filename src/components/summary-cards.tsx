@@ -32,7 +32,7 @@ export function SummaryCards({ summary }: Props) {
       subtitle: `${summary.saleCount} sales, ${summary.leaseCount} leases`,
     },
     {
-      title: "LPK Share",
+      title: "LPK",
       value: formatCurrency(summary.totalLpkShare),
       subtitle: "Your earnings",
     },

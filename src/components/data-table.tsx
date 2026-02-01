@@ -49,9 +49,9 @@ export function DataTable({ rows: initialRows, year }: Props) {
               <TableHead>Payment</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Commission</TableHead>
-              <TableHead className="text-right">LPK Share</TableHead>
+              <TableHead className="text-right">LPK</TableHead>
               <TableHead>Sold To</TableHead>
-              <TableHead>Source</TableHead>
+              <TableHead>FB POST</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
