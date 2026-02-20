@@ -49,7 +49,7 @@ export function SummaryCards({ summary }: Props) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{card.value}</div>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-lg text-muted-foreground mt-1">
               {card.subtitle}
             </p>
           </CardContent>

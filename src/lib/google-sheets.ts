@@ -89,6 +89,51 @@ export async function fetchSheetData(year: string): Promise<SheetData> {
   return { year, rows, summary };
 }
 
+export async function getAvailableSheets(): Promise<string[]> {
+  const sheets = getSheetsClient();
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+  const response = await sheets.spreadsheets.get({ spreadsheetId });
+  return (response.data.sheets || [])
+    .map((s) => s.properties?.title || "")
+    .filter((title) => title && title !== "Sheet1");
+}
+
+export async function createYearSheet(newYear: string, templateYear = "2026"): Promise<void> {
+  const sheets = getSheetsClient();
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+
+  // Get template sheet ID
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+  const templateSheet = spreadsheet.data.sheets?.find(
+    (s) => s.properties?.title === templateYear
+  );
+  if (templateSheet?.properties?.sheetId == null) {
+    throw new Error(`Template sheet "${templateYear}" not found`);
+  }
+  const templateSheetId = templateSheet.properties.sheetId;
+
+  // Duplicate the sheet with the new year as its title
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          duplicateSheet: {
+            sourceSheetId: templateSheetId,
+            newSheetName: newYear,
+          },
+        },
+      ],
+    },
+  });
+
+  // Clear all data rows (keep header row 1)
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId,
+    range: `'${newYear}'!A2:BF1000`,
+  });
+}
+
 export async function updateCell(update: CellUpdate): Promise<void> {
   const sheets = getSheetsClient();
   const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
@@ -101,6 +146,75 @@ export async function updateCell(update: CellUpdate): Promise<void> {
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [[update.value]],
+    },
+  });
+}
+
+export interface NewRowFields {
+  listing?: string;
+  status?: string;
+  payment?: string;
+  amount?: string;
+  commission?: string;
+  notes?: string;
+  soldTo?: string;
+}
+
+export async function appendRow(year: string, fields: NewRowFields): Promise<number> {
+  const sheets = getSheetsClient();
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+
+  // Build a sparse row array with values at correct column indices (up to Q = index 16)
+  const row = new Array(17).fill("");
+  row[COL.LISTING] = fields.listing || "";
+  row[COL.STATUS] = fields.status || "";
+  row[COL.PAYMENT] = fields.payment || "";
+  row[COL.AMOUNT] = fields.amount || "";
+  row[COL.COMMISSION] = fields.commission || "";
+  row[COL.NOTES] = fields.notes || "";
+  row[COL.SOLD_TO] = fields.soldTo || "";
+
+  const response = await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range: `'${year}'!A:Q`,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [row] },
+  });
+
+  // Parse the row number from updatedRange like "'2026'!A5:Q5"
+  const updatedRange = response.data.updates?.updatedRange || "";
+  const match = updatedRange.match(/!A(\d+):/);
+  return match ? parseInt(match[1]) : -1;
+}
+
+export async function deleteRow(year: string, rowIndex: number): Promise<void> {
+  const sheets = getSheetsClient();
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID!;
+
+  // Get sheet ID
+  const spreadsheet = await sheets.spreadsheets.get({ spreadsheetId });
+  const sheet = spreadsheet.data.sheets?.find((s) => s.properties?.title === year);
+  if (!sheet?.properties?.sheetId) {
+    throw new Error(`Sheet "${year}" not found`);
+  }
+  const sheetId = sheet.properties.sheetId;
+
+  await sheets.spreadsheets.batchUpdate({
+    spreadsheetId,
+    requestBody: {
+      requests: [
+        {
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: "ROWS",
+              startIndex: rowIndex - 1, // Convert 1-based to 0-based
+              endIndex: rowIndex,
+            },
+          },
+        },
+      ],
     },
   });
 }

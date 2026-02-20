@@ -9,9 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { ListingCell } from "@/components/listing-cell";
 import { StatusBadge } from "@/components/status-badge";
 import { EditRowDialog } from "@/components/edit-row-dialog";
+import { Plus } from "lucide-react";
 import type { SheetRow } from "@/lib/types";
 
 interface Props {
@@ -31,6 +33,7 @@ function formatCurrency(value: number | null): string {
 export function DataTable({ rows: initialRows, year }: Props) {
   const [rows, setRows] = useState<SheetRow[]>(initialRows);
   const [editingRow, setEditingRow] = useState<SheetRow | null>(null);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   function handleRowUpdated(updatedRow: SheetRow) {
     setRows((prev) =>
@@ -38,15 +41,30 @@ export function DataTable({ rows: initialRows, year }: Props) {
     );
   }
 
+  function handleRowAdded(newRow: SheetRow) {
+    setRows((prev) => [...prev, newRow]);
+  }
+
+  function handleRowDeleted(rowIndex: number) {
+    setRows((prev) => prev.filter((r) => r.rowIndex !== rowIndex));
+  }
+
   return (
     <>
+      <div className="flex justify-end mb-3">
+        <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-1" />
+          Add Row
+        </Button>
+      </div>
+
       <div className="rounded-md border bg-white">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Listing</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Payment</TableHead>
+              <TableHead>Payment Date</TableHead>
               <TableHead className="text-right">Amount</TableHead>
               <TableHead className="text-right">Commission</TableHead>
               <TableHead className="text-right">LPK</TableHead>
@@ -99,12 +117,25 @@ export function DataTable({ rows: initialRows, year }: Props) {
         </Table>
       </div>
 
+      {/* Edit Row Dialog */}
       <EditRowDialog
         row={editingRow}
         year={year}
         open={!!editingRow}
+        mode="edit"
         onClose={() => setEditingRow(null)}
         onSaved={handleRowUpdated}
+        onDeleted={handleRowDeleted}
+      />
+
+      {/* Add Row Dialog */}
+      <EditRowDialog
+        row={null}
+        year={year}
+        open={addDialogOpen}
+        mode="add"
+        onClose={() => setAddDialogOpen(false)}
+        onSaved={handleRowAdded}
       />
     </>
   );

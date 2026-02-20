@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchSheetData, updateCell } from "@/lib/google-sheets";
-import { AVAILABLE_YEARS } from "@/lib/constants";
+import { fetchSheetData, updateCell, appendRow, deleteRow } from "@/lib/google-sheets";
 import type { CellUpdate } from "@/lib/types";
+
+function isValidYear(year: string | null): year is string {
+  return !!year && /^\d{4}$/.test(year);
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const year = searchParams.get("year");
 
-  if (!year || !AVAILABLE_YEARS.includes(year as (typeof AVAILABLE_YEARS)[number])) {
+  if (!isValidYear(year)) {
     return NextResponse.json(
-      { error: `Invalid year. Must be one of: ${AVAILABLE_YEARS.join(", ")}` },
+      { error: "Invalid year. Must be a 4-digit number." },
       { status: 400 }
     );
   }
@@ -30,7 +33,7 @@ export async function PUT(request: NextRequest) {
   try {
     const body: CellUpdate = await request.json();
 
-    if (!body.year || !AVAILABLE_YEARS.includes(body.year as (typeof AVAILABLE_YEARS)[number])) {
+    if (!isValidYear(body.year)) {
       return NextResponse.json({ error: "Invalid year" }, { status: 400 });
     }
     if (!body.rowIndex || body.rowIndex < 2) {
@@ -39,11 +42,11 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!["H", "L", "P"].includes(body.column)) {
+    if (!["A", "H", "L", "M", "N", "P", "Q"].includes(body.column)) {
       return NextResponse.json(
         {
           error:
-            "Can only update columns H (Status), L (Payment), or P (Notes)",
+            "Can only update columns H (Status), L (Payment), M (Amount), N (Commission), P (Notes), or Q (Sold To)",
         },
         { status: 400 }
       );
@@ -55,6 +58,56 @@ export async function PUT(request: NextRequest) {
     console.error("Failed to update cell:", error);
     return NextResponse.json(
       { error: "Failed to update Google Sheet" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    if (!isValidYear(body.year)) {
+      return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+    }
+
+    const rowIndex = await appendRow(body.year, {
+      listing: body.listing,
+      status: body.status,
+      payment: body.payment,
+      amount: body.amount,
+      commission: body.commission,
+      notes: body.notes,
+      soldTo: body.soldTo,
+    });
+
+    return NextResponse.json({ success: true, rowIndex });
+  } catch (error) {
+    console.error("Failed to add row:", error);
+    return NextResponse.json(
+      { error: "Failed to add row to Google Sheet" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+
+    if (!isValidYear(body.year)) {
+      return NextResponse.json({ error: "Invalid year" }, { status: 400 });
+    }
+    if (!body.rowIndex || body.rowIndex < 2) {
+      return NextResponse.json({ error: "Invalid row index" }, { status: 400 });
+    }
+
+    await deleteRow(body.year, body.rowIndex);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Failed to delete row:", error);
+    return NextResponse.json(
+      { error: "Failed to delete row from Google Sheet" },
       { status: 500 }
     );
   }

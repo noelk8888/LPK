@@ -16,7 +16,10 @@ export const COL = {
 export const COL_LETTER = {
   STATUS: "H",
   PAYMENT: "L",
+  AMOUNT: "M",
+  COMMISSION: "N",
   NOTES: "P",
+  SOLD_TO: "Q",
 } as const;
 
 export const AVAILABLE_YEARS = ["2023", "2024", "2025", "2026"] as const;

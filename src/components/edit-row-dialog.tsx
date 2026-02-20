@@ -20,33 +20,70 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Trash2 } from "lucide-react";
 import type { SheetRow } from "@/lib/types";
 
 interface Props {
   row: SheetRow | null;
   year: string;
   open: boolean;
+  mode?: "edit" | "add";
   onClose: () => void;
   onSaved: (updatedRow: SheetRow) => void;
+  onDeleted?: (rowIndex: number) => void;
 }
 
-export function EditRowDialog({ row, year, open, onClose, onSaved }: Props) {
+export function EditRowDialog({
+  row,
+  year,
+  open,
+  mode = "edit",
+  onClose,
+  onSaved,
+  onDeleted,
+}: Props) {
+  const [listing, setListing] = useState("");
   const [status, setStatus] = useState("");
   const [payment, setPayment] = useState("");
   const [notes, setNotes] = useState("");
+  const [amount, setAmount] = useState("");
+  const [commission, setCommission] = useState("");
+  const [soldTo, setSoldTo] = useState("");
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  const isAdd = mode === "add";
 
   useEffect(() => {
-    if (row) {
-      setStatus(row.status);
-      setPayment(row.payment);
-      setNotes(row.notes);
+    if (open) {
+      if (row && mode === "edit") {
+        setListing(row.listing);
+        setStatus(row.status);
+        setPayment(row.payment);
+        setNotes(row.notes);
+        setAmount(row.amount !== null ? String(row.amount) : "");
+        setCommission(row.commission !== null ? String(row.commission) : "");
+        setSoldTo(row.soldTo);
+      } else if (mode === "add") {
+        setListing("");
+        setStatus("");
+        setPayment("");
+        setNotes("");
+        setAmount("");
+        setCommission("");
+        setSoldTo("");
+      }
+      setConfirmingDelete(false);
     }
-  }, [row]);
+  }, [row, open, mode]);
 
-  if (!row) return null;
+  if (mode === "edit" && !row) return null;
 
-  async function updateField(column: "H" | "L" | "P", value: string) {
+  async function updateField(
+    column: "A" | "H" | "L" | "M" | "N" | "P" | "Q",
+    value: string
+  ) {
     const res = await fetch("/api/sheets", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -63,65 +100,177 @@ export function EditRowDialog({ row, year, open, onClose, onSaved }: Props) {
   async function handleSave() {
     setSaving(true);
     try {
-      const updates: Promise<void>[] = [];
+      if (isAdd) {
+        // Create new row
+        const res = await fetch("/api/sheets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            year,
+            listing,
+            status,
+            payment,
+            amount,
+            commission,
+            notes,
+            soldTo,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to create row");
+        const data = await res.json();
 
-      if (status !== row!.status) {
-        updates.push(updateField("H", status));
-      }
-      if (payment !== row!.payment) {
-        updates.push(updateField("L", payment));
-      }
-      if (notes !== row!.notes) {
-        updates.push(updateField("P", notes));
-      }
+        const lines = listing.split("\n");
+        onSaved({
+          rowIndex: data.rowIndex,
+          listing,
+          listingTitle: lines[0]?.trim() || "",
+          listingDetails: lines.slice(1).join("\n").trim(),
+          status,
+          payment,
+          amount: amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null,
+          commission:
+            commission !== "" ? parseFloat(commission.replace(/,/g, "")) : null,
+          lpkShare: null,
+          notes,
+          soldTo,
+          organic: "",
+          latLong: "",
+        });
 
-      if (updates.length === 0) {
+        toast.success("New row added to Google Sheets.");
         onClose();
-        return;
+      } else {
+        // Update existing row
+        const updates: Promise<void>[] = [];
+
+        if (listing !== row!.listing) {
+          updates.push(updateField("A", listing));
+        }
+        if (status !== row!.status) {
+          updates.push(updateField("H", status));
+        }
+        if (payment !== row!.payment) {
+          updates.push(updateField("L", payment));
+        }
+        const rawAmount = row!.amount !== null ? String(row!.amount) : "";
+        if (amount !== rawAmount) {
+          updates.push(updateField("M", amount));
+        }
+        const rawCommission =
+          row!.commission !== null ? String(row!.commission) : "";
+        if (commission !== rawCommission) {
+          updates.push(updateField("N", commission));
+        }
+        if (notes !== row!.notes) {
+          updates.push(updateField("P", notes));
+        }
+        if (soldTo !== row!.soldTo) {
+          updates.push(updateField("Q", soldTo));
+        }
+
+        if (updates.length === 0) {
+          onClose();
+          return;
+        }
+
+        await Promise.all(updates);
+
+        const lines = listing.split("\n");
+        onSaved({
+          ...row!,
+          listing,
+          listingTitle: lines[0]?.trim() || "",
+          listingDetails: lines.slice(1).join("\n").trim(),
+          status,
+          payment,
+          amount: amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null,
+          commission:
+            commission !== "" ? parseFloat(commission.replace(/,/g, "")) : null,
+          notes,
+          soldTo,
+        });
+
+        toast.success("Changes saved to Google Sheets.");
+        onClose();
       }
-
-      await Promise.all(updates);
-
-      onSaved({
-        ...row!,
-        status,
-        payment,
-        notes,
-      });
-
-      toast.success("Changes saved to Google Sheets.");
-      onClose();
     } catch {
-      toast.error("Failed to save changes. Please try again.");
+      toast.error(
+        isAdd ? "Failed to add row." : "Failed to save changes. Please try again."
+      );
     } finally {
       setSaving(false);
     }
   }
 
+  async function handleDelete() {
+    if (!row) return;
+    setDeleting(true);
+    try {
+      const res = await fetch("/api/sheets", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ year, rowIndex: row.rowIndex }),
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      onDeleted?.(row.rowIndex);
+      toast.success("Row deleted from Google Sheets.");
+      onClose();
+    } catch {
+      toast.error("Failed to delete row.");
+    } finally {
+      setDeleting(false);
+      setConfirmingDelete(false);
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="leading-snug">
-            {row.listingTitle || "Edit Row"}
+            {isAdd ? "Add New Listing" : row?.listingTitle || "Edit Row"}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>
-              Amount:{" "}
-              {row.amount !== null
-                ? `PHP ${row.amount.toLocaleString()}`
-                : "-"}
-            </p>
-            <p>
-              Commission:{" "}
-              {row.commission !== null
-                ? `PHP ${row.commission.toLocaleString()}`
-                : "-"}
-            </p>
-            <p>Sold To: {row.soldTo || "-"}</p>
+          <div className="space-y-2">
+            <Label>Listing Details</Label>
+            <Textarea
+              value={listing}
+              onChange={(e) => setListing(e.target.value)}
+              placeholder="Listing title and details..."
+              rows={6}
+              className="font-mono text-xs"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Amount (PHP)</Label>
+            <Input
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="e.g. 10000000"
+              type="number"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Commission (PHP)</Label>
+            <Input
+              value={commission}
+              onChange={(e) => setCommission(e.target.value)}
+              placeholder="e.g. 300000"
+              type="number"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Sold To</Label>
+            <Input
+              value={soldTo}
+              onChange={(e) => setSoldTo(e.target.value)}
+              placeholder="Buyer name"
+            />
           </div>
 
           <div className="space-y-2">
@@ -139,11 +288,11 @@ export function EditRowDialog({ row, year, open, onClose, onSaved }: Props) {
           </div>
 
           <div className="space-y-2">
-            <Label>Payment Status</Label>
+            <Label>Payment Date</Label>
             <Input
               value={payment}
               onChange={(e) => setPayment(e.target.value)}
-              placeholder="Payment status"
+              placeholder="Payment date"
             />
           </div>
 
@@ -158,13 +307,48 @@ export function EditRowDialog({ row, year, open, onClose, onSaved }: Props) {
           </div>
         </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? "Saving..." : "Save Changes"}
-          </Button>
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {!isAdd && (
+            <div className="flex-1 flex justify-start">
+              {confirmingDelete ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleDelete}
+                    disabled={deleting}
+                  >
+                    {deleting ? "Deleting..." : "Confirm Delete"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmingDelete(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => setConfirmingDelete(true)}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              )}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Saving..." : isAdd ? "Add Row" : "Save Changes"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
