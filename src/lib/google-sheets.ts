@@ -95,7 +95,7 @@ export async function getAvailableSheets(): Promise<string[]> {
   const response = await sheets.spreadsheets.get({ spreadsheetId });
   return (response.data.sheets || [])
     .map((s) => s.properties?.title || "")
-    .filter((title) => title && title !== "Sheet1");
+    .filter((title) => title && !title.startsWith("Sheet"));
 }
 
 export async function createYearSheet(newYear: string, templateYear = "2026"): Promise<void> {
