@@ -50,7 +50,7 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Password x-x-x-x</Label>
               <Input
                 id="password"
                 type="password"
