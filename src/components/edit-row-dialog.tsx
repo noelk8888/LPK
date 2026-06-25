@@ -33,6 +33,29 @@ interface Props {
   onDeleted?: (rowIndex: number) => void;
 }
 
+function formatNumberWithCommas(value: string): string {
+  // Remove everything except digits and decimal point
+  const clean = value.replace(/[^0-9.]/g, "");
+  const parts = clean.split(".");
+  // Format the integer part with commas
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  if (parts.length > 1) {
+    parts[1] = parts[1].substring(0, 2);
+    return `${parts[0]}.${parts[1]}`;
+  }
+  return parts[0];
+}
+
+function formatOnBlur(value: string): string {
+  if (!value) return "";
+  const clean = parseFloat(value.replace(/,/g, ""));
+  if (isNaN(clean)) return "";
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(clean);
+}
+
 export function EditRowDialog({
   row,
   year,
@@ -63,9 +86,9 @@ export function EditRowDialog({
         setStatus(row.status);
         setPayment(row.payment);
         setNotes(row.notes);
-        setAmount(row.amount !== null ? String(row.amount) : "");
-        setCommission(row.commission !== null ? String(row.commission) : "");
-        setLpkShare(row.lpkShare !== null ? String(row.lpkShare) : "");
+        setAmount(row.amount !== null ? formatOnBlur(String(row.amount)) : "");
+        setCommission(row.commission !== null ? formatOnBlur(String(row.commission)) : "");
+        setLpkShare(row.lpkShare !== null ? formatOnBlur(String(row.lpkShare)) : "");
         setSoldTo(row.soldTo);
       } else if (mode === "add") {
         setListing("");
@@ -113,9 +136,9 @@ export function EditRowDialog({
             listing,
             status,
             payment,
-            amount,
-            commission,
-            lpkShare,
+            amount: amount.replace(/,/g, ""),
+            commission: commission.replace(/,/g, ""),
+            lpkShare: lpkShare.replace(/,/g, ""),
             notes,
             soldTo,
           }),
@@ -157,19 +180,17 @@ export function EditRowDialog({
         if (payment !== row!.payment) {
           updates.push(updateField("L", payment));
         }
-        const rawAmount = row!.amount !== null ? String(row!.amount) : "";
-        if (amount !== rawAmount) {
-          updates.push(updateField("M", amount));
+        const parsedAmount = amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null;
+        if (parsedAmount !== row!.amount) {
+          updates.push(updateField("M", amount.replace(/,/g, "")));
         }
-        const rawCommission =
-          row!.commission !== null ? String(row!.commission) : "";
-        if (commission !== rawCommission) {
-          updates.push(updateField("N", commission));
+        const parsedCommission = commission !== "" ? parseFloat(commission.replace(/,/g, "")) : null;
+        if (parsedCommission !== row!.commission) {
+          updates.push(updateField("N", commission.replace(/,/g, "")));
         }
-        const rawLpkShare =
-          row!.lpkShare !== null ? String(row!.lpkShare) : "";
-        if (lpkShare !== rawLpkShare) {
-          updates.push(updateField("O", lpkShare));
+        const parsedLpkShare = lpkShare !== "" ? parseFloat(lpkShare.replace(/,/g, "")) : null;
+        if (parsedLpkShare !== row!.lpkShare) {
+          updates.push(updateField("O", lpkShare.replace(/,/g, "")));
         }
         if (notes !== row!.notes) {
           updates.push(updateField("P", notes));
@@ -260,9 +281,10 @@ export function EditRowDialog({
             <Label className="text-left">Amount (PHP)</Label>
             <Input
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="e.g. 10000000"
-              type="number"
+              onChange={(e) => setAmount(formatNumberWithCommas(e.target.value))}
+              onBlur={(e) => setAmount(formatOnBlur(e.target.value))}
+              placeholder="e.g. 10,000,000.00"
+              type="text"
             />
           </div>
 
@@ -270,9 +292,10 @@ export function EditRowDialog({
             <Label className="text-left">Commission (PHP)</Label>
             <Input
               value={commission}
-              onChange={(e) => setCommission(e.target.value)}
-              placeholder="e.g. 300000"
-              type="number"
+              onChange={(e) => setCommission(formatNumberWithCommas(e.target.value))}
+              onBlur={(e) => setCommission(formatOnBlur(e.target.value))}
+              placeholder="e.g. 300,000.00"
+              type="text"
             />
           </div>
 
@@ -280,9 +303,10 @@ export function EditRowDialog({
             <Label className="text-left">LPK (PHP)</Label>
             <Input
               value={lpkShare}
-              onChange={(e) => setLpkShare(e.target.value)}
-              placeholder="e.g. 100000"
-              type="number"
+              onChange={(e) => setLpkShare(formatNumberWithCommas(e.target.value))}
+              onBlur={(e) => setLpkShare(formatOnBlur(e.target.value))}
+              placeholder="e.g. 100,000.00"
+              type="text"
             />
           </div>
 
