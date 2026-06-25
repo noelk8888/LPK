@@ -18,6 +18,7 @@ export const COL_LETTER = {
   PAYMENT: "L",
   AMOUNT: "M",
   COMMISSION: "N",
+  LPK_SHARE: "O",
   NOTES: "P",
   SOLD_TO: "Q",
 } as const;

@@ -42,11 +42,11 @@ export async function PUT(request: NextRequest) {
         { status: 400 }
       );
     }
-    if (!["A", "H", "L", "M", "N", "P", "Q"].includes(body.column)) {
+    if (!["A", "H", "L", "M", "N", "O", "P", "Q"].includes(body.column)) {
       return NextResponse.json(
         {
           error:
-            "Can only update columns H (Status), L (Payment), M (Amount), N (Commission), P (Notes), or Q (Sold To)",
+            "Can only update columns H (Status), L (Payment), M (Amount), N (Commission), O (LPK), P (Notes), or Q (Sold To)",
         },
         { status: 400 }
       );
@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
       payment: body.payment,
       amount: body.amount,
       commission: body.commission,
+      lpkShare: body.lpkShare,
       notes: body.notes,
       soldTo: body.soldTo,
     });

@@ -156,6 +156,7 @@ export interface NewRowFields {
   payment?: string;
   amount?: string;
   commission?: string;
+  lpkShare?: string;
   notes?: string;
   soldTo?: string;
 }
@@ -171,6 +172,7 @@ export async function appendRow(year: string, fields: NewRowFields): Promise<num
   row[COL.PAYMENT] = fields.payment || "";
   row[COL.AMOUNT] = fields.amount || "";
   row[COL.COMMISSION] = fields.commission || "";
+  row[COL.LPK_SHARE] = fields.lpkShare || "";
   row[COL.NOTES] = fields.notes || "";
   row[COL.SOLD_TO] = fields.soldTo || "";
 

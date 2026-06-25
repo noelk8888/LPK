@@ -33,6 +33,6 @@ export interface SheetData {
 export interface CellUpdate {
   year: string; // Which sheet tab
   rowIndex: number; // 1-based row number
-  column: "A" | "H" | "L" | "M" | "N" | "P" | "Q"; // Which column to update
+  column: "A" | "H" | "L" | "M" | "N" | "O" | "P" | "Q"; // Which column to update
   value: string; // New value
 }

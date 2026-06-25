@@ -48,6 +48,7 @@ export function EditRowDialog({
   const [notes, setNotes] = useState("");
   const [amount, setAmount] = useState("");
   const [commission, setCommission] = useState("");
+  const [lpkShare, setLpkShare] = useState("");
   const [soldTo, setSoldTo] = useState("");
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -64,6 +65,7 @@ export function EditRowDialog({
         setNotes(row.notes);
         setAmount(row.amount !== null ? String(row.amount) : "");
         setCommission(row.commission !== null ? String(row.commission) : "");
+        setLpkShare(row.lpkShare !== null ? String(row.lpkShare) : "");
         setSoldTo(row.soldTo);
       } else if (mode === "add") {
         setListing("");
@@ -72,6 +74,7 @@ export function EditRowDialog({
         setNotes("");
         setAmount("");
         setCommission("");
+        setLpkShare("");
         setSoldTo("");
       }
       setConfirmingDelete(false);
@@ -81,7 +84,7 @@ export function EditRowDialog({
   if (mode === "edit" && !row) return null;
 
   async function updateField(
-    column: "A" | "H" | "L" | "M" | "N" | "P" | "Q",
+    column: "A" | "H" | "L" | "M" | "N" | "O" | "P" | "Q",
     value: string
   ) {
     const res = await fetch("/api/sheets", {
@@ -112,6 +115,7 @@ export function EditRowDialog({
             payment,
             amount,
             commission,
+            lpkShare,
             notes,
             soldTo,
           }),
@@ -130,7 +134,8 @@ export function EditRowDialog({
           amount: amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null,
           commission:
             commission !== "" ? parseFloat(commission.replace(/,/g, "")) : null,
-          lpkShare: null,
+          lpkShare:
+            lpkShare !== "" ? parseFloat(lpkShare.replace(/,/g, "")) : null,
           notes,
           soldTo,
           organic: "",
@@ -161,6 +166,11 @@ export function EditRowDialog({
         if (commission !== rawCommission) {
           updates.push(updateField("N", commission));
         }
+        const rawLpkShare =
+          row!.lpkShare !== null ? String(row!.lpkShare) : "";
+        if (lpkShare !== rawLpkShare) {
+          updates.push(updateField("O", lpkShare));
+        }
         if (notes !== row!.notes) {
           updates.push(updateField("P", notes));
         }
@@ -186,6 +196,8 @@ export function EditRowDialog({
           amount: amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null,
           commission:
             commission !== "" ? parseFloat(commission.replace(/,/g, "")) : null,
+          lpkShare:
+            lpkShare !== "" ? parseFloat(lpkShare.replace(/,/g, "")) : null,
           notes,
           soldTo,
         });
@@ -233,8 +245,8 @@ export function EditRowDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Listing Details</Label>
+          <div className="grid grid-cols-[140px_1fr] items-start gap-4">
+            <Label className="pt-2 text-left">Listing Details</Label>
             <Textarea
               value={listing}
               onChange={(e) => setListing(e.target.value)}
@@ -244,8 +256,8 @@ export function EditRowDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Amount (PHP)</Label>
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">Amount (PHP)</Label>
             <Input
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -254,8 +266,8 @@ export function EditRowDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Commission (PHP)</Label>
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">Commission (PHP)</Label>
             <Input
               value={commission}
               onChange={(e) => setCommission(e.target.value)}
@@ -264,8 +276,18 @@ export function EditRowDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Sold To</Label>
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">LPK (PHP)</Label>
+            <Input
+              value={lpkShare}
+              onChange={(e) => setLpkShare(e.target.value)}
+              placeholder="e.g. 100000"
+              type="number"
+            />
+          </div>
+
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">Sold To</Label>
             <Input
               value={soldTo}
               onChange={(e) => setSoldTo(e.target.value)}
@@ -273,8 +295,8 @@ export function EditRowDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Status</Label>
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">Status</Label>
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Select status" />
@@ -287,8 +309,8 @@ export function EditRowDialog({
             </Select>
           </div>
 
-          <div className="space-y-2">
-            <Label>Payment Date</Label>
+          <div className="grid grid-cols-[140px_1fr] items-center gap-4">
+            <Label className="text-left">Payment Date</Label>
             <Input
               value={payment}
               onChange={(e) => setPayment(e.target.value)}
@@ -296,8 +318,8 @@ export function EditRowDialog({
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>Notes</Label>
+          <div className="grid grid-cols-[140px_1fr] items-start gap-4">
+            <Label className="pt-2 text-left">Notes</Label>
             <Textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
