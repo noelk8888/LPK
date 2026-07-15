@@ -63,6 +63,7 @@ export function DataTable({ rows: initialRows, year }: Props) {
           <TableHeader>
             <TableRow>
               <TableHead className="w-[300px]">Listing</TableHead>
+              <TableHead>Details</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Payment Date</TableHead>
               <TableHead className="text-right">Amount</TableHead>
@@ -76,7 +77,7 @@ export function DataTable({ rows: initialRows, year }: Props) {
             {rows.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={9}
                   className="h-24 text-center text-muted-foreground"
                 >
                   No data for this year.
@@ -94,6 +95,9 @@ export function DataTable({ rows: initialRows, year }: Props) {
                       title={row.listingTitle}
                       details={row.listingDetails}
                     />
+                  </TableCell>
+                  <TableCell className="whitespace-pre-wrap text-sm">
+                    {row.details}
                   </TableCell>
                   <TableCell>
                     <StatusBadge status={row.status} />

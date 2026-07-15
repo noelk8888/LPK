@@ -152,6 +152,7 @@ export function EditRowDialog({
           listing,
           listingTitle: lines[0]?.trim() || "",
           listingDetails: lines.slice(1).join("\n").trim(),
+          details: "",
           status,
           payment,
           amount: amount !== "" ? parseFloat(amount.replace(/,/g, "")) : null,

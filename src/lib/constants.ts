@@ -1,6 +1,7 @@
 // Zero-based column indices matching the Google Sheet
 export const COL = {
   LISTING: 0, // A
+  DETAILS: 1, // B
   STATUS: 7, // H
   PAYMENT: 11, // L
   AMOUNT: 12, // M

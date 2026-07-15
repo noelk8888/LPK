@@ -59,6 +59,7 @@ export async function fetchSheetData(year: string): Promise<SheetData> {
         listing,
         listingTitle: title,
         listingDetails: details,
+        details: row[COL.DETAILS] || "",
         status: row[COL.STATUS] || "",
         payment: row[COL.PAYMENT] || "",
         amount: parseCurrency(row[COL.AMOUNT]),

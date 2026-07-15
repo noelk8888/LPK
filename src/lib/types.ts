@@ -3,6 +3,7 @@ export interface SheetRow {
   listing: string; // Column A - raw multiline text
   listingTitle: string; // Parsed: first line of Column A
   listingDetails: string; // Parsed: remaining lines of Column A
+  details: string; // Column B
   status: string; // Column H - "Sale", "Lease", or "Sale/Lease"
   payment: string; // Column L
   amount: number | null; // Column M - parsed as number
