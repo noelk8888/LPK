@@ -14,7 +14,7 @@ export default function DashboardLayout({
               href="https://docs.google.com/spreadsheets/d/1Wk-hWIPaQvtrbHvHE4miy4u16zzSar4BETBg1itj_Gg/edit?gid=672080172#gid=672080172"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline hover:text-blue-600"
+              className="hover:text-blue-600"
             >
               Real
             </a>{" "}
