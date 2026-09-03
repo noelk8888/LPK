@@ -17,7 +17,7 @@ export function DashboardSkeleton() {
           </Card>
         ))}
       </div>
-      <div className="rounded-md border bg-white p-4 space-y-3">
+      <div className="rounded-md border bg-white dark:bg-card p-4 space-y-3">
         {Array.from({ length: 8 }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}

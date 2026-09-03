@@ -58,7 +58,7 @@ export function DataTable({ rows: initialRows, year }: Props) {
         </Button>
       </div>
 
-      <div className="rounded-md border bg-white">
+      <div className="rounded-md border bg-white dark:bg-card">
         <Table>
           <TableHeader>
             <TableRow>

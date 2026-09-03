@@ -1,4 +1,5 @@
 import { YearSelector } from "@/components/year-selector";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function DashboardLayout({
   children,
@@ -6,8 +7,8 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-yellow-50">
-      <header className="border-b bg-white sticky top-0 z-50">
+    <div className="min-h-screen bg-yellow-50 dark:bg-background">
+      <header className="border-b bg-white dark:bg-card sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-xl font-bold">
             <a
@@ -20,7 +21,10 @@ export default function DashboardLayout({
             </a>{" "}
             Estate Dashboard
           </h1>
-          <YearSelector />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <YearSelector />
+          </div>
         </div>
       </header>
       <main className="container mx-auto px-4 py-6">{children}</main>
